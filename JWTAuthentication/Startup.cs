@@ -43,6 +43,20 @@ namespace JWTAuthentication
 
             services.Configure<JwtConfig>(Configuration.GetSection("JwtConfig"));
 
+            var key = Encoding.ASCII.GetBytes(Configuration["JwtConfig:Secret"]);
+            var encryptionKey = Encoding.ASCII.GetBytes(Configuration["JwtConfig:EncryptionKey"]); //must be 16 character
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                //TokenDecryptionKey = new SymmetricSecurityKey(encryptionKey),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                RequireExpirationTime = false,
+            };
+            services.AddSingleton(tokenValidationParameters);
+
             services.AddAuthentication(option =>
             {
                 option.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -50,20 +64,9 @@ namespace JWTAuthentication
                 option.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(jwt =>
             {
-                var key = Encoding.ASCII.GetBytes(Configuration["JwtConfig:Secret"]);
-                var encryptionKey = Encoding.ASCII.GetBytes(Configuration["JwtConfig:EncryptionKey"]); //must be 16 character
+                
                 jwt.SaveToken = true;
-                jwt.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    TokenDecryptionKey = new SymmetricSecurityKey(encryptionKey),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    RequireExpirationTime = false,
-                };
-
+                jwt.TokenValidationParameters = tokenValidationParameters;
             });
 
 
